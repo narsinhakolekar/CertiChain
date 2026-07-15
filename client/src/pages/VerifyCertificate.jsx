@@ -18,7 +18,7 @@ function VerifyCertificate() {
   useEffect(() => {
     async function verify() {
       try {
-        await fetch(
+       const response = await fetch(
   `${import.meta.env.VITE_API_URL}/api/certificates/verify/${id}`,
         );
 

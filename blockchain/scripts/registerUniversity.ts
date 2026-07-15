@@ -26,7 +26,7 @@ async function main() {
   );
 
   const universityWallet =
-    "0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199";
+  "0x586e7f865C779769b7cfEfF95b8cDF455004B095";
 
   console.log("Registering university...");
 
