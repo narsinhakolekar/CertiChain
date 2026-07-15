@@ -2,7 +2,6 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import University from "../models/University.js";
 
-
 export async function register(req, res) {
 
     try {
@@ -14,68 +13,99 @@ export async function register(req, res) {
             wallet
         } = req.body;
 
-
         console.log("===== REGISTER REQUEST =====");
         console.log(req.body);
 
-
-        const existing =
-            await University.findOne({
-                email
-            });
-
-
-        if (existing) {
+        // Validate input
+        if (!name || !email || !password || !wallet) {
 
             return res.status(400).json({
-                message:"University already registered"
+                message: "All fields are required"
             });
 
         }
 
+        // Check existing email
+        const existingEmail = await University.findOne({
+            email
+        });
 
-        const hashedPassword =
-            await bcrypt.hash(
-                password,
-                10
-            );
+        if (existingEmail) {
 
-
-        const university =
-            await University.create({
-
-                name,
-
-                email,
-
-                password: hashedPassword,
-
-                wallet
-
+            return res.status(400).json({
+                message: "Email already registered"
             });
 
+        }
+
+        // Check existing wallet
+        const existingWallet = await University.findOne({
+            wallet
+        });
+
+        if (existingWallet) {
+
+            return res.status(400).json({
+                message: "Wallet already registered"
+            });
+
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(
+            password,
+            10
+        );
+
+        // Save university
+        const university = await University.create({
+
+            name,
+
+            email,
+
+            password: hashedPassword,
+
+            wallet
+
+        });
 
         console.log("===== REGISTER SUCCESS =====");
         console.log(university);
 
+        return res.status(201).json({
 
-        res.json({
+            success: true,
 
-            message:
-            "University registered successfully"
+            message: "University registered successfully",
+
+            university: {
+
+                id: university._id,
+
+                name: university.name,
+
+                email: university.email,
+
+                wallet: university.wallet
+
+            }
 
         });
 
-
     }
-    catch(error){
+    catch (error) {
 
+        console.error("REGISTER ERROR:");
         console.error(error);
 
+        return res.status(500).json({
 
-        res.status(500).json({
+            success: false,
 
-            error:error.message
+            message: "Registration failed",
+
+            error: error.message
 
         });
 
@@ -83,132 +113,119 @@ export async function register(req, res) {
 
 }
 
-
-
-
-
-export async function login(req,res){
+export async function login(req, res) {
 
     try {
-
 
         const {
             email,
             password
         } = req.body;
 
-
-
         console.log("===== LOGIN REQUEST =====");
         console.log(req.body);
 
+        // Find university
+        const university = await University.findOne({
+            email
+        });
 
-
-        const university =
-            await University.findOne({
-                email
-            });
-
-
-
-        if(!university){
+        if (!university) {
 
             return res.status(404).json({
 
-                message:
-                "University not found"
+                success: false,
+
+                message: "University not found"
 
             });
 
         }
 
+        // Check password
+        const validPassword = await bcrypt.compare(
 
+            password,
 
-        const validPassword =
-            await bcrypt.compare(
+            university.password
 
-                password,
+        );
 
-                university.password
-
-            );
-
-
-
-        if(!validPassword){
+        if (!validPassword) {
 
             return res.status(401).json({
 
-                message:
-                "Invalid password"
+                success: false,
+
+                message: "Invalid password"
 
             });
 
         }
 
+        // Generate JWT
+        const token = jwt.sign(
 
+            {
 
+                id: university._id,
 
-        const token =
-            jwt.sign(
+                email: university.email,
 
-                {
-                    id: university._id,
+                wallet: university.wallet
 
-                    email: university.email,
+            },
 
-                    wallet: university.wallet
-                },
+            process.env.JWT_SECRET,
 
+            {
 
-                process.env.JWT_SECRET,
+                expiresIn: "1d"
 
+            }
 
-                {
-                    expiresIn:"1d"
-                }
+        );
 
-            );
+        console.log("===== LOGIN SUCCESS =====");
+        console.log(university.email);
 
+        return res.json({
 
+            success: true,
 
-        res.json({
+            message: "Login successful",
 
             token,
 
+            university: {
 
-            university:{
+                id: university._id,
 
-                name:
-                university.name,
+                name: university.name,
 
+                email: university.email,
 
-                email:
-                university.email,
-
-
-                wallet:
-                university.wallet
+                wallet: university.wallet
 
             }
 
         });
 
-
-
     }
-    catch(error){
+    catch (error) {
 
-
+        console.error("LOGIN ERROR:");
         console.error(error);
 
+        return res.status(500).json({
 
-        res.status(500).json({
+            success: false,
 
-            error:error.message
+            message: "Login failed",
+
+            error: error.message
 
         });
-
 
     }
 

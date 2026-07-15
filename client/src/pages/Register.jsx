@@ -21,8 +21,7 @@ function Register() {
     setError("");
 
     try {
-
-      await fetch(
+const response = await fetch(
   `${import.meta.env.VITE_API_URL}/api/auth/register`,
         {
           method: "POST",
